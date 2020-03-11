@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Qwasar Quest 05</title>
+    </head>
+    <body >
+        <div id="my_countdown">
+            <h1 id="time"></h1>
+            <h2>until next fact is sent</h2>
+        </div>
+        <div id="my_cat_fact">
+
+        </div>
+        <div id="paginate">
+
+        </div>
+        
+    </body>
+    <script type="text/javascript">
+        document.body.style.textAlign='center'
+        document.body.style.fontFamily='tahoma'
+        document.body.style.fontSize='18px'
+        document.getElementById('my_countdown').style.width='90%'
+        document.getElementById('my_countdown').style.margin='auto'
+        
+        document.getElementById('my_cat_fact').style.width='90%'
+        document.getElementById('my_cat_fact').style.margin='auto'
+
+        document.getElementById('paginate').style.width='90%'
+        document.getElementById('paginate').style.margin='auto'
+        document.getElementById('paginate').style.display='flex'
+        document.getElementById('paginate').style.justifyContent='center'
+        document.getElementById('paginate').style.flexDirection='row'
+        
+        let x = ""
+        let myjs = ""
+        var countDownDate = new Date()
+        countDownDate.setHours(21)
+        countDownDate.setMinutes(20)
+        countDownDate.setSeconds(00)
+        countDownDate.getTime();
+        decrementTimer()
+        sendRequest()
+        function decrementTimer() {
+            let now = new Date().getTime();
+            let distance = countDownDate - now;
+            let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            document.getElementById("time").innerHTML = hours + " hours, " + minutes + " minutes, " + seconds + " seconds ";
+            if (distance < 0) {
+                clearInterval(x);
+                sendRequest()
+            }
+        }
+        function GetXmlHttpObject()
+        {
+            var xmlHttp=null;
+            try{
+                xmlHttp=new XMLHttpRequest();
+            }catch (e){
+                try{
+                    xmlHttp=new ActiveXObject("Msxml2.XMLHTTP");
+                }catch (e){
+                    xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
+                }
+            }
+            return xmlHttp;
+        }
+        function processResponse(pageNumber){
+            //create pagination start
+            let perPage = 25
+            let totPage = (myjs.all.length % perPage) > 0 ? (Math.floor(myjs.all.length / perPage) + 1) : (myjs.all.length / perPage)
+            let hasPreviousPage = pageNumber > 1 ? true : false
+            let hasNextPage =  pageNumber <  totPage ? true : false
+            var ul = document.createElement("ul")
+            if(hasPreviousPage){
+                var li = document.createElement("li")
+                li.innerHTML = "Prev"
+                li.addEventListener("click", function(){processResponse(pageNumber - 1)})
+                ul.appendChild(li)
+            }
+            for(let pagy = 1; pagy<=totPage; pagy++){
+                var li = document.createElement("li")
+                li.innerHTML = pagy
+                li.addEventListener("click", function(){processResponse(pagy)})
+                if(pagy===pageNumber){
+                    li.style.backgroundColor = "cornflowerblue"
+                    li.style.color = "white"
+                }
+                ul.appendChild(li)
+            }
+            if(hasNextPage){
+                var li = document.createElement("li")
+                li.innerHTML = "Next"
+                li.addEventListener("click", function(){processResponse(pageNumber + 1)})
+                ul.appendChild(li)
+            }
+            document.getElementById("paginate").innerHTML= ""
+            document.getElementById("paginate").appendChild(ul)
+            var x = document.querySelectorAll("li");
+            ul.style.listStyleType = "none"
+            ul.style.display='flex'
+            ul.style.justifyContent='space-around'
+            ul.style.flexDirection='row'
+            for(var j = 0; j<x.length; j++){
+                x[j].style.padding = "25px"
+                x[j].style.border = "2px solid grey"
+                x[j].style.cursor = "pointer"
+                x[j].style.marginLeft = "15px"
+            }
+            //pagination ends
+            var table = document.createElement("table")
+            table.style.width = '100%';
+            table.style.textAlign = 'justify';
+			table.setAttribute('border', '1');
+			table.setAttribute('cellspacing', '0');
+            table.setAttribute('cellpadding', '15');
+            table.style.fontSize = "22px"
+            table.style.fontFamily="tahoma"
+            //prepare the table header
+            var thead = document.createElement("thead")
+            var headRow = document.createElement('tr')
+            let head = ["Added By","Fact","Votes"]
+            for(var i = 0 ; i<=2; i++){
+                var th = document.createElement('th')
+                th.innerHTML = head[i]
+                headRow.appendChild(th)
+            }
+            thead.appendChild(headRow)
+            thead.style.backgroundColor = "cornflowerblue"
+            thead.style.color = "white"
+            table.appendChild(thead)
+            
+            //prepare the table body
+            var tbody = document.createElement("tbody")
+            newset = myjs.all.slice((pageNumber - 1)*perPage, pageNumber*perPage)
+            newset.forEach(element => {
+                var bodyRow = document.createElement('tr')
+                var th1 = document.createElement('th')
+                th1.innerHTML = element.hasOwnProperty("user")? element.user.name.first.concat(" ").concat(element.user.name.last) : ""
+                bodyRow.appendChild(th1)
+
+                var th2 = document.createElement('th')
+                th2.innerHTML = element.hasOwnProperty("text") ? element.text : ""
+                bodyRow.appendChild(th2)
+
+                var th3 = document.createElement('th')
+                th3.innerHTML = element.hasOwnProperty("upvotes")? element.upvotes : ""
+                bodyRow.appendChild(th3)
+                tbody.appendChild(bodyRow)
+            });
+            
+            table.appendChild(tbody)
+            document.getElementById("my_cat_fact").innerHTML=""
+            document.getElementById("my_cat_fact").appendChild(table)
+            x = setInterval(decrementTimer,1000)
+        }
+
+        function sendRequest(){
+            document.getElementById("my_cat_fact").innerHTML="Loading Latest Facts ..."
+            xmlHttp=GetXmlHttpObject();
+            var url = "https://cors-anywhere.herokuapp.com/https://cat-fact.herokuapp.com/facts?animal_type=cat";
+            xmlHttp.onreadystatechange = () =>{
+                if (xmlHttp.readyState === 4 && xmlHttp.status === 200)
+                {
+                    if(xmlHttp.responseText){
+                        myjs = JSON.parse(xmlHttp.responseText)
+                        processResponse(1);
+                    }
+                }
+
+            } 
+            xmlHttp.open("GET",url,true);
+            xmlHttp.setRequestHeader("Content-type", 'application/json');
+            xmlHttp.send();
+        }
+    </script>
+</html>
